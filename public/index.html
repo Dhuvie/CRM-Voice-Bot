@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <script>
+    try {
+      var t = localStorage.getItem('wow-theme') === 'dark' ? 'dark' : 'light';
+      document.documentElement.dataset.theme = t;
+      document.querySelector('meta[name="color-scheme"]').content = t;
+    } catch {}
+  </script>
+  <title>Divyasree Whispers of the Wind | Voice Console</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="faceplate">
+    <div class="faceplate-inner">
+      <div class="brand">
+        <div class="medallion" aria-hidden="true"><span>W</span></div>
+        <div class="brand-copy">
+          <div class="engraved-kicker">DIVYASREE DEVELOPERS · NANDI VALLEY</div>
+          <h1>Whispers of the Wind <span class="model-plate">DHRUV AI CONSOLE</span></h1>
+        </div>
+      </div>
+
+      <div class="faceplate-controls">
+        <div class="led-bank" aria-label="System connectivity">
+          <div id="gemini-pill" class="led-module led-neutral">
+            <span class="led-jewel" aria-hidden="true"></span>
+            <span class="led-label">Checking Gemini...</span>
+          </div>
+          <div id="prompt-mode-pill" class="led-module led-neutral">
+            <span class="led-jewel" aria-hidden="true"></span>
+            <span class="led-label">Default Prompt</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          id="theme-switch"
+          class="rocker-switch"
+          role="switch"
+          aria-checked="false"
+          aria-label="Toggle dark mode"
+        >
+          <span class="rocker-label rocker-light">Light</span>
+          <span class="rocker-track" aria-hidden="true">
+            <span class="rocker-knob"></span>
+          </span>
+          <span class="rocker-label rocker-dark">Dark</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="chassis">
+    <section id="setup-banner" class="recessed-alert" hidden>
+      <span class="led-jewel led-amber-static" aria-hidden="true"></span>
+      <div>
+        <strong>Gemini API key not configured.</strong>
+        Add your free <code>GEMINI_API_KEY</code> from
+        <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">aistudio.google.com/apikey</a>
+        to <code>.env</code> and restart the server.
+      </div>
+    </section>
+
+    <div class="tabs-shell">
+      <div class="nav-tablist" role="tablist" aria-label="Console sections">
+        <button type="button" role="tab" id="tab-console" class="nav-tab" aria-selected="true" tabindex="0">
+          Voice Console
+        </button>
+        <button type="button" role="tab" id="tab-logs" class="nav-tab" aria-selected="false" tabindex="-1">
+          <span>CRM Logs</span>
+          <span id="logs-tab-count" class="tab-badge mono">0</span>
+        </button>
+        <button type="button" role="tab" id="tab-prompt" class="nav-tab" aria-selected="false" tabindex="-1">
+          <span>System Prompt</span>
+          <span id="prompt-tab-tag" class="tab-badge">Default</span>
+        </button>
+      </div>
+
+      <div class="tab-panels">
+        <!-- Tab 1: Voice Console (Voice Deck + Call Monitor) -->
+        <div role="tabpanel" id="panel-console" aria-labelledby="tab-console" class="tab-panel">
+          <div class="tabpanel-inner">
+            <div class="console-grid">
+              <section class="hardware-panel" aria-labelledby="studio-heading">
+                <div class="panel-bar">
+                  <div class="screw" aria-hidden="true"></div>
+                  <div class="panel-title-wrap">
+                    <span class="engraved-label">OUTBOUND TRANSMITTER</span>
+                    <h2 id="studio-heading">Voice Deck</h2>
+                  </div>
+                  <span class="model-plate">20MS BINARY PCM</span>
+                </div>
+
+                <div class="input-bay">
+                  <div class="field">
+                    <label for="lead-name">Lead Name</label>
+                    <span id="lead-name-hint" class="hint">Greeted personally in Step 1</span>
+                    <input
+                      type="text"
+                      id="lead-name"
+                      name="leadName"
+                      placeholder="e.g., Rohan Sharma"
+                      autocomplete="name"
+                      aria-describedby="lead-name-hint"
+                    >
+                  </div>
+
+                  <div class="field">
+                    <label for="voice-select">Dhruv Voice</label>
+                    <span id="voice-hint" class="hint">Native EN + HI audio</span>
+                    <select id="voice-select" name="voiceName" aria-describedby="voice-hint"></select>
+                  </div>
+
+                  <div class="field field-full">
+                    <label for="lead-context">Internal CRM Context</label>
+                    <span id="context-hint" class="hint">Optional background note (never spoken aloud)</span>
+                    <input
+                      type="text"
+                      id="lead-context"
+                      name="leadContext"
+                      placeholder="e.g., CXO in Bengaluru, enquired about weekend plots"
+                      aria-describedby="context-hint"
+                    >
+                  </div>
+                </div>
+
+                <div class="intercom-unit" id="orb-stage" data-state="idle">
+                  <div class="lcd-bezel">
+                    <div class="lcd-screen">
+                      <div class="lcd-top">
+                        <span id="call-state-badge" class="lcd-status">STANDBY</span>
+                        <div class="lcd-readouts">
+                          <span id="lang-pill" class="lcd-chip">EN</span>
+                          <span id="latency-pill" class="lcd-chip mono">-- ms</span>
+                          <span id="call-timer" class="lcd-chip mono" aria-live="off">00:00</span>
+                        </div>
+                      </div>
+
+                      <div class="meter-row">
+                        <div class="speaker-grille" aria-hidden="true"></div>
+                        <div class="vu-housing">
+                          <canvas id="vu-meter" width="240" height="108" aria-hidden="true"></canvas>
+                        </div>
+                        <div class="speaker-grille" aria-hidden="true"></div>
+                      </div>
+
+                      <p id="call-status-text" class="lcd-caption">
+                        Ready. Use headphones for instant echo-free English and Hindi switching.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="button-deck">
+                    <button type="button" id="btn-start-call" class="hw-btn hw-btn-call">
+                      <span class="btn-led" aria-hidden="true"></span>
+                      <span>Start Call</span>
+                    </button>
+                    <button type="button" id="btn-mute" class="hw-btn hw-btn-metal" disabled aria-pressed="false">
+                      <span class="btn-led" aria-hidden="true"></span>
+                      <span id="mute-label">Mute</span>
+                    </button>
+                    <button type="button" id="btn-end-call" class="hw-btn hw-btn-hangup" disabled>
+                      <span>End Call</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="preset-strip" aria-label="Quick live test prompts">
+                  <span class="engraved-label">LIVE TEST PRESETS</span>
+                  <div class="preset-buttons">
+                    <button type="button" class="hw-chip" data-quick-text="Haan ji, Hindi mein baat karte hain." disabled>
+                      Switch to Hindi
+                    </button>
+                    <button type="button" class="hw-chip" data-quick-text="Yes I have two minutes. Tell me the exact location and price range for Divyasree Whispers of the Wind." disabled>
+                      Pronunciation Test
+                    </button>
+                    <button type="button" class="hw-chip" data-quick-text="What is the RERA registration number and payment plan?" disabled>
+                      RERA Fallback
+                    </button>
+                    <button type="button" class="hw-chip" data-quick-text="Everything fits well. Please schedule a Property Expert call tomorrow evening at 6 PM." disabled>
+                      Book Follow-up
+                    </button>
+                  </div>
+                </div>
+
+                <form id="text-reply-form" class="reply-row" novalidate>
+                  <label for="text-reply-input" class="visually-hidden">Send typed lead reply</label>
+                  <input
+                    type="text"
+                    id="text-reply-input"
+                    placeholder="Type a lead reply during the call (English / Hindi)..."
+                    disabled
+                  >
+                  <button type="submit" id="btn-send-text" class="hw-btn hw-btn-metal hw-btn-sm" disabled>Send</button>
+                </form>
+
+                <div class="spec-plate" aria-label="Verified project facts">
+                  <div class="spec-cell"><span>PLOTS</span><strong>1,200 - 3,199 sq.ft.</strong></div>
+                  <div class="spec-cell"><span>PRICING</span><strong>₹92.4L - ₹2.46 Cr</strong></div>
+                  <div class="spec-cell"><span>OPEN SPACE</span><strong>74% · 20k Clubhouse</strong></div>
+                  <div class="spec-cell"><span>POSSESSION</span><strong>Dec 2029 (Phased)</strong></div>
+                </div>
+              </section>
+
+              <section class="hardware-panel monitor-panel" aria-labelledby="transcript-heading">
+                <div class="panel-bar">
+                  <div class="screw" aria-hidden="true"></div>
+                  <div class="panel-title-wrap">
+                    <span class="engraved-label">LIVE TELEMETRY &amp; TRANSCRIPT</span>
+                    <h2 id="transcript-heading">Call Monitor</h2>
+                  </div>
+                  <div id="live-channel-tag" class="led-module led-neutral">
+                    <span class="led-jewel" aria-hidden="true"></span>
+                    <span class="led-label">Standby</span>
+                  </div>
+                </div>
+
+                <ol class="step-led-bar" aria-label="Outbound call script progress">
+                  <li class="step-led active" data-step="1">
+                    <span class="step-lamp" aria-hidden="true"></span>
+                    <span class="step-num">01</span>
+                    <span>Permission</span>
+                  </li>
+                  <li class="step-led" data-step="2">
+                    <span class="step-lamp" aria-hidden="true"></span>
+                    <span class="step-num">02</span>
+                    <span>Qualify</span>
+                  </li>
+                  <li class="step-led" data-step="3">
+                    <span class="step-lamp" aria-hidden="true"></span>
+                    <span class="step-num">03</span>
+                    <span>Pitch</span>
+                  </li>
+                  <li class="step-led" data-step="4">
+                    <span class="step-lamp" aria-hidden="true"></span>
+                    <span class="step-num">04</span>
+                    <span>Expert CTA</span>
+                  </li>
+                </ol>
+
+                <div class="gauge-strip" aria-label="Captured qualification checkpoints">
+                  <div class="gauge-well" id="chk-permission"><span class="gauge-k">Permission</span><span class="gauge-v">-</span></div>
+                  <div class="gauge-well" id="chk-intent"><span class="gauge-k">Intent</span><span class="gauge-v">-</span></div>
+                  <div class="gauge-well" id="chk-location"><span class="gauge-k">Location</span><span class="gauge-v">-</span></div>
+                  <div class="gauge-well" id="chk-budget"><span class="gauge-k">Budget</span><span class="gauge-v">-</span></div>
+                  <div class="gauge-well" id="chk-timeline"><span class="gauge-k">Timeline</span><span class="gauge-v">-</span></div>
+                  <div class="gauge-well" id="chk-status"><span class="gauge-k">Status</span><span class="gauge-v">-</span></div>
+                </div>
+
+                <div id="transcript-feed" class="transcript-well" role="log" aria-live="polite" aria-label="Live call transcript">
+                  <div class="well-empty">
+                    <h3>Standby Mode</h3>
+                    <p>
+                      Press <strong>Start Call</strong> to begin. Dhruv opens Step 1 in English,
+                      switches instantaneously to Hindi or Hinglish, and follows Divyasree pronunciation standards.
+                    </p>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: CRM Logs -->
+        <div role="tabpanel" id="panel-logs" aria-labelledby="tab-logs" class="tab-panel" hidden>
+          <div class="tabpanel-inner tab-stack">
+            <section class="counter-rack" aria-label="Campaign counters">
+              <div class="counter-plate">
+                <span class="engraved-label">TOTAL CALLS</span>
+                <strong class="counter-num mono" id="kpi-total">0</strong>
+              </div>
+              <div class="counter-plate">
+                <span class="engraved-label">HOT LEADS</span>
+                <strong class="counter-num mono num-hot" id="kpi-hot">0</strong>
+              </div>
+              <div class="counter-plate">
+                <span class="engraved-label">WARM LEADS</span>
+                <strong class="counter-num mono num-warm" id="kpi-warm">0</strong>
+              </div>
+              <div class="counter-plate">
+                <span class="engraved-label">FOLLOW-UPS BOOKED</span>
+                <strong class="counter-num mono" id="kpi-followups">0</strong>
+              </div>
+            </section>
+
+            <section class="hardware-panel" aria-labelledby="call-logs-caption">
+              <div class="panel-bar">
+                <div class="screw" aria-hidden="true"></div>
+                <div class="panel-title-wrap">
+                  <span class="engraved-label">SECTION 9 ARCHIVE</span>
+                  <h2 id="logs-heading">CRM Qualification Logs</h2>
+                </div>
+                <div class="bar-actions">
+                  <a href="/api/logs/export.csv" class="hw-btn hw-btn-metal hw-btn-sm" download>Export CSV</a>
+                  <button type="button" id="btn-clear-logs" class="hw-btn hw-btn-metal hw-btn-sm">Clear All</button>
+                </div>
+              </div>
+
+              <div id="playback-deck" class="playback-deck" hidden>
+                <div class="playback-head">
+                  <div class="playback-info">
+                    <span class="led-jewel" aria-hidden="true"></span>
+                    <div>
+                      <span class="engraved-label">CALL RECORDING PLAYBACK</span>
+                      <strong id="playback-title">Select a call to play</strong>
+                    </div>
+                  </div>
+                  <div class="bar-actions">
+                    <a id="playback-download" href="#" class="hw-btn hw-btn-metal hw-btn-sm" download>Download WAV</a>
+                    <button type="button" id="btn-close-deck" class="hw-btn hw-btn-metal hw-btn-sm" aria-label="Close player">✕</button>
+                  </div>
+                </div>
+                <audio id="deck-audio" class="hw-audio" controls preload="metadata"></audio>
+              </div>
+
+              <div tabindex="0" role="region" aria-labelledby="call-logs-caption" class="table-wrapper">
+                <table class="logs-table">
+                  <caption id="call-logs-caption" class="visually-hidden">
+                    Divyasree Whispers of the Wind outbound call qualification logs
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Lead Name</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Permission</th>
+                      <th scope="col">Intent</th>
+                      <th scope="col">Location Fit</th>
+                      <th scope="col">Budget Fit</th>
+                      <th scope="col">Timeline</th>
+                      <th scope="col">Language</th>
+                      <th scope="col">Follow-up</th>
+                      <th scope="col">Notes</th>
+                      <th scope="col">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="logs-tbody">
+                    <tr class="empty-row">
+                      <td colspan="11">No calls logged yet. Complete a call in Voice Console to save structured Section 9 CRM logs here.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <!-- Tab 3: System Prompt Editor -->
+        <div role="tabpanel" id="panel-prompt" aria-labelledby="tab-prompt" class="tab-panel" hidden>
+          <div class="tabpanel-inner">
+            <section class="hardware-panel" aria-labelledby="prompt-heading">
+              <div class="panel-bar">
+                <div class="screw" aria-hidden="true"></div>
+                <div class="panel-title-wrap">
+                  <span class="engraved-label">AGENT INSTRUCTION MEMORY</span>
+                  <h2 id="prompt-heading">Customize System Prompt</h2>
+                </div>
+                <div class="bar-actions">
+                  <button type="button" id="btn-reset-prompt" class="hw-btn hw-btn-metal hw-btn-sm">Reset Default</button>
+                  <button type="button" id="btn-save-prompt" class="hw-btn hw-btn-call hw-btn-sm">Save Prompt</button>
+                </div>
+              </div>
+
+              <div class="prompt-toolbar">
+                <span class="hint">
+                  Use <code>{{LEAD_NAME}}</code> anywhere to auto-insert the Lead Name from Voice Console. Changes apply to the next call immediately and persist across restarts.
+                </span>
+                <span id="prompt-stats" class="model-plate">0 chars</span>
+              </div>
+
+              <label for="system-prompt-editor" class="visually-hidden">System prompt instructions</label>
+              <textarea
+                id="system-prompt-editor"
+                class="prompt-editor mono"
+                rows="22"
+                spellcheck="false"
+                placeholder="Loading system prompt..."
+              ></textarea>
+
+              <div class="prompt-footer">
+                <p id="prompt-status-msg" class="prompt-status" aria-live="polite"></p>
+                <div class="bar-actions">
+                  <button type="button" id="btn-copy-prompt" class="hw-btn hw-btn-metal hw-btn-sm">Copy Prompt</button>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <dialog id="inspect-dialog" closedby="any" aria-labelledby="inspect-title" class="hw-dialog">
+    <div class="dialog-head">
+      <div>
+        <span class="engraved-label" id="inspect-meta">CALL ARCHIVE</span>
+        <h2 id="inspect-title">Call Transcript &amp; Log</h2>
+      </div>
+      <form method="dialog">
+        <button value="close" class="hw-btn hw-btn-metal hw-btn-sm" aria-label="Close">✕</button>
+      </form>
+    </div>
+
+    <div class="dialog-body">
+      <div id="inspect-audio-well" class="inspect-audio-well" hidden>
+        <div class="playback-head">
+          <span class="engraved-label">CALL AUDIO RECORDING (16KHZ WAV)</span>
+          <a id="inspect-download" href="#" class="hw-btn hw-btn-metal hw-btn-sm" download>Download WAV</a>
+        </div>
+        <audio id="inspect-audio" class="hw-audio" controls preload="metadata"></audio>
+      </div>
+      <div class="pipe-well">
+        <span class="engraved-label">SECTION 9 LOG LINE</span>
+        <code id="inspect-pipe-line"></code>
+      </div>
+      <div id="inspect-transcript" class="inspect-transcript"></div>
+    </div>
+
+    <div class="dialog-foot">
+      <button type="button" id="btn-inspect-copy" class="hw-btn hw-btn-metal hw-btn-sm">Copy Log Line</button>
+      <form method="dialog">
+        <button value="close" class="hw-btn hw-btn-call hw-btn-sm" autofocus>Close</button>
+      </form>
+    </div>
+  </dialog>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

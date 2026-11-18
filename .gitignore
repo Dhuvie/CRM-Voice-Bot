@@ -1,0 +1,7 @@
+node_modules/
+.env
+data/call-logs.json
+data/custom-prompt.txt
+data/recordings/*.wav
+*.log
+.DS_Store

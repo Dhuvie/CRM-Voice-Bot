@@ -1,0 +1,21 @@
+{
+  "name": "divyasree-wow-voice-agent",
+  "version": "1.0.0",
+  "description": "Divyasree Whispers of the Wind (WOW) Outbound Voice Agent powered by Gemini 3.8 Live",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@google/genai": "^2.24.0",
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0",
+    "ws": "^8.18.1"
+  }
+}
